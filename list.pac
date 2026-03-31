@@ -1,4 +1,4 @@
-var proxy = 'SOCKS5 127.0.0.1:1080; SOCKS 127.0.0.1:1080; DIRECT;';
+var proxy = 'SOCKS5 127.0.0.1:7897; SOCKS 127.0.0.1:7897; DIRECT;';
 var direct = 'DIRECT';
 
 // ===== Custom rules (higher priority than the imported rule table) =====
