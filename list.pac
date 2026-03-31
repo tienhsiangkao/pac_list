@@ -1,18 +1,46 @@
-var proxy = 'SOCKS5 127.0.0.1:7897; SOCKS 127.0.0.1:7897; DIRECT;';
+var proxy = 'PROXY 127.0.0.1:7897; SOCKS5 127.0.0.1:7897; DIRECT;';
 var direct = 'DIRECT';
 
-// ===== Custom rules (higher priority than the imported rule table) =====
-// Local / intranet always DIRECT
+// ===== 1. 自定义强制直连 (Direct) =====
 var customDirectHosts = [
     'localhost'
 ];
+
 var customDirectSuffix = [
+    // 你原本的后缀
     'local',
     'lan',
     'home.arpa',
-    'internal'
+    'internal',
+    // Sing-box 规则：Bilibili 等国内域名
+    'bilibili.com',
+    'bilibili.tv',
+    'hdslb.com',
+    'bilivideo.com',
+    'bilivideo.cn',
+    'acgvideo.com'
 ];
 
+// ===== 2. 自定义强制代理 (Proxy) =====
+var customProxySuffix = [
+    // YouTube / Google (补全 gstatic 解决报错)
+    "youtube.com", "googlevideo.com", "ytimg.com", "gvt1.com", "gvt2.com", 
+    "youtubei.googleapis.com", "youtube.googleapis.com", "google.com", "googleapis.com", "gstatic.com",
+    // OpenAI
+    "openai.com", "chatgpt.com", "oaistatic.com", "oaiusercontent.com",
+    // GG Poker
+    "ggnetwork.com", "ggpoker.com", "gg-global-cdn.com", "ggpoker.net", "ggcore.net", 
+    "ggpkr.com", "ggpokercdn.com", "ggpoker-static.com", "ggpoker-cdn.com", "gg-cdn.com", "ggnops.com"
+];
+
+// ===== 3. 自定义代理关键词 (包含即走代理) =====
+var customProxyKeywords = [
+    "youtube", "googlevideo", "openai", "chatgpt", "codex", 
+    "ggpoker", "ggnetwork", "ggnet", "ggnops", "wpt", "wepoker", "bybit"
+];
+
+
+// ===== 辅助函数 =====
 function isIPv4(host) {
     var parts = host.split('.');
     if (parts.length !== 4) return false;
@@ -49,6 +77,66 @@ function matchList(host, list) {
     return false;
 }
 
+function matchKeyword(host, list) {
+    for (var i = 0; i < list.length; i++) {
+        if (host.indexOf(list[i]) !== -1) return true;
+    }
+    return false;
+}
+
+// ===== 核心逻辑：PAC 入口函数 =====
+function FindProxyForURL(url, host) {
+    host = host.toLowerCase();
+
+    // 1. 本地/局域网直连
+    if (isPlainHostName(host) || isPrivateIPv4(host)) return direct;
+    
+    // 2. 匹配自定义直连名单 (Bilibili 等)
+    if (matchList(host, customDirectHosts)) return direct;
+    if (matchList(host, customDirectSuffix)) return direct;
+
+    // 3. 匹配自定义代理名单 (GG Poker, YouTube 等)
+    if (matchList(host, customProxySuffix)) return proxy;
+    if (matchKeyword(host, customProxyKeywords)) return proxy;
+
+    // 4. 去原有的海量规则库中匹配
+    for (var i = 0; i < rules.length; i++) {
+        var ret = testHost(host, i);
+        if (ret != undefined) {
+            return ret;
+        }
+    }
+    
+    // 5. 兜底策略
+    return direct;
+}
+
+var lastRule = '';
+function testHost(host, index) {
+    for (var i = 0; i < rules[index].length; i++) {
+        for (var j = 0; j < rules[index][i].length; j++) {
+            lastRule = rules[index][i][j]
+            if (host == lastRule || host.endsWith('.' + lastRule))
+                return i % 2 == 0 ? 'DIRECT' : proxy;
+        }
+    }
+    lastRule = '';
+}
+
+// Polyfill for endsWith
+if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+        var subjectString = this.toString();
+        if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.indexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+  };
+}
+
+// ===== 4. 你原本的海量规则库 (完整保留) =====
 var rules = [
     [
         [],
@@ -2977,6 +3065,7 @@ var rules = [
             "ronjoneswriter.com",
             "rou.video",
             "rsdlmonitor.com",
+            "rsdlmonitor.org",
             "rsf-chinese.org",
             "rsf.org",
             "rsshub.app",
@@ -4151,45 +4240,3 @@ var rules = [
         ]
     ]
 ];
-
-var lastRule = '';
-
-function FindProxyForURL(url, host) {
-    host = host.toLowerCase();
-
-    if (isPlainHostName(host)) return direct;
-    if (matchList(host, customDirectHosts)) return direct;
-    if (matchList(host, customDirectSuffix)) return direct;
-    if (isPrivateIPv4(host)) return direct;
-
-    for (var i = 0; i < rules.length; i++) {
-        ret = testHost(host, i);
-        if (ret != undefined)
-            return ret;
-    }
-    return direct;
-}
-
-function testHost(host, index) {
-    for (var i = 0; i < rules[index].length; i++) {
-        for (var j = 0; j < rules[index][i].length; j++) {
-            lastRule = rules[index][i][j]
-            if (host == lastRule || host.endsWith('.' + lastRule))
-                return i % 2 == 0 ? 'DIRECT' : proxy;
-        }
-    }
-    lastRule = '';
-}
-
-// REF: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith
-if (!String.prototype.endsWith) {
-    String.prototype.endsWith = function(searchString, position) {
-        var subjectString = this.toString();
-        if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
-            position = subjectString.length;
-        }
-        position -= searchString.length;
-        var lastIndex = subjectString.indexOf(searchString, position);
-        return lastIndex !== -1 && lastIndex === position;
-  };
-}
