@@ -2238,6 +2238,7 @@ var rules = [
             "liberal.org.hk",
             "libertysculpturepark.com",
             "libertytimes.com.tw",
+            "libgen.*"
             "library-access.sk",
             "libredd.it",
             "lifemiles.com",
