@@ -1910,6 +1910,7 @@ var rules = [
             "hsjp.net",
             "hsselite.com",
             "hst.net.tw",
+            "hsex.tv",
             "ht.ly",
             "htkou.net",
             "htl.li",
