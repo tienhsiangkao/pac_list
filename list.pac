@@ -2862,6 +2862,7 @@ var rules = [
             "podwise.ai",
             "poe.com",
             "points-media.com",
+            "pokernews.com",
             "pokerstars.com",
             "pokerstars.net",
             "pokerstrategy.com",
