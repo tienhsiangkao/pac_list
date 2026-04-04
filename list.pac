@@ -695,6 +695,7 @@ var rules = [
             "cattt.com",
             "caus.com",
             "cbc.ca",
+            "chinese-empires.eu",
             "cc.com",
             "cccat.cc",
             "cccat.co",
