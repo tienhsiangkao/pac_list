@@ -915,6 +915,7 @@ var rules = [
             "csuchen.de",
             "csw.org.uk",
             "ct.org.tw",
+            "ctext.org",
             "ctinets.com",
             "ctinews.com",
             "ctitv.com.tw",
