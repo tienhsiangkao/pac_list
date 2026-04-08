@@ -18,7 +18,8 @@ var customDirectSuffix = [
     'hdslb.com',
     'bilivideo.com',
     'bilivideo.cn',
-    'acgvideo.com'
+    'acgvideo.com',
+    'depaul.edu'
 ];
 
 // ===== 2. 自定义强制代理 (Proxy) =====
